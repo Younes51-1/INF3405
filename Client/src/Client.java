@@ -1,8 +1,12 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -10,6 +14,8 @@ public class Client {
 	static String ipAdresse;
 	static int port;
 	private static Socket socket;
+	static boolean closeCommunication = false;
+	static boolean serverActive = false;
 	static DataInputStream 	donneesRecues;	
 	static DataOutputStream 	donneesEnvoyees;
 	static String 				commande 		= "";
@@ -20,12 +26,12 @@ public class Client {
 
 		String[] sousIp = ip.split(Pattern.quote("."));
 		if (sousIp.length != 4) 
-			throw new Exception(" 4 morceaux");
+			throw new Exception("4 morceaux");
 		
 		for (String s : sousIp) {
 			try {
 				int ipChunk = Integer.parseInt(s);
-				if (0 < ipChunk || ipChunk < 255)
+				if (0 > ipChunk || ipChunk > 255)
 					throw new Exception("Les nombres doivent etre 0 et 255");
 			} catch (NumberFormatException e) {
 				throw new NumberFormatException("des nombers entiers");
@@ -81,6 +87,7 @@ public class Client {
 			System.out.println(socket.getRemoteSocketAddress().toString());
 			donneesRecues 	= new DataInputStream(socket.getInputStream());
 			donneesEnvoyees = new DataOutputStream(socket.getOutputStream());
+			serverActive = donneesRecues.readUTF().equals("Active");
 		}
 		catch (java.net.ConnectException e) {
 			System.out.println("La connexion au serveur n'a pas pu être établie. Arrêt.");
@@ -93,7 +100,7 @@ public class Client {
 		return;
 	}
 	
-	private static void exection() throws Exception {
+	private static void execution() throws Exception {
 		final String cd = "cd";
 		final String ls = "ls";
 		final String exit = "exit";
@@ -101,30 +108,69 @@ public class Client {
 		final String upload = "upload";
 		final String download = "download";
 		
-		reponse = donneesRecues.readUTF();
+		commande = scanner.nextLine();
 		
 		switch(reponse) {
 			case cd:
-				// TODO
+				donneesEnvoyees.writeUTF(commande);
+				break;
 			case ls:
-				//TODO
+				donneesEnvoyees.writeUTF(commande);
+				break;
 			case exit:
-				//TODO
+				closeCommunication = true;
+				break;
 			case mkdir:
-				//TODO
+				donneesEnvoyees.writeUTF(commande);
+				break;
 			case upload:
 				final String 	FileName = donneesRecues.readUTF();
 				final File file = new File(System.getProperty("user.dir") + File.separator + FileName);
-				if (file.exists() && file.isFile() && file.canRead())
-					sendServer(upload);
+				if (file.exists() && file.isFile() && file.canRead()) {
+					try {
+						uploadToServer(file);
+					} catch (Exception e) {
+						System.out.println(e.getMessage());
+					}
+				} else {
+					System.out.println("Probleme avec le fichier");
+				}
 				break;
 			case download:
-				//TODO
+				try {
+					downloadFromServer();
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
+				break;
 		}
 	}
 	
-	private static void sendServer(String command) {
-		// TODO
+	private static void uploadToServer(File file) throws Exception {
+		donneesEnvoyees.writeUTF("Incoming");
+		byte[] 	octetsFichier 		= new byte[(int)file.length()];
+	
+		donneesEnvoyees.writeUTF(Long.toString(file.length()));
+		
+		Path chemin 	= Paths.get(System.getProperty("user.dir") + File.separator + file.getName());
+		octetsFichier 	= Files.readAllBytes(chemin);
+		
+		donneesEnvoyees.write(octetsFichier, 0, octetsFichier.length);
+	}
+	
+	private static void downloadFromServer() throws Exception {
+		final String 	FileName = donneesRecues.readUTF();				
+		final int 		TAILLE_FICHIER 	= Integer.parseInt(donneesRecues.readUTF());
+		byte[] 			octetsRecus 	= new byte[TAILLE_FICHIER];
+		int 			octetsLus 		= 0;
+		
+		while (octetsLus < TAILLE_FICHIER){
+			octetsLus += donneesRecues.read(octetsRecus, octetsLus, TAILLE_FICHIER - octetsLus);
+		}
+		
+		FileOutputStream fos = new FileOutputStream(FileName);
+		fos.write(octetsRecus);
+		fos.close();
 	}
 	
 	public static void main(String[] args) {
@@ -133,15 +179,14 @@ public class Client {
 		System.out.println("\nEssayons d'établir la connexion. . . ");
 		socketConnexion();
 		try {
-			exection();
+			while(!closeCommunication && serverActive) {
+				execution();
+			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
 		
-		
-		
-		
-		
+	
 		System.out.println("\nVous avez été déconnecté avec succès. Fin du programme.");
 		scanner.close();
 	}
