@@ -101,7 +101,7 @@ public class Serveur {
         private Socket socket;
         private int clientNumber;
         static String[] commands;
-        private static Path currentPath = Paths.get("").toAbsolutePath();
+        private static Path currentPath = Paths.get("Stockage").toAbsolutePath();
 
         public ClientHandler(Socket socket, int clientNumber) {
             this.socket = socket;
@@ -109,17 +109,15 @@ public class Serveur {
             System.out.println("\nConnection established with client. #" + clientNumber + " (" + socket + ")\n");
         }
 
-
         private static void cdHandler() throws Exception {
             String[] parts = command.split(" ", 2);
             String directoryStr = parts[1];
 
             Path newFolder = currentPath;
-
+            
             if (directoryStr.equals("..")) {
                 Path parentDirectory = currentPath.getParent();
                 if (parentDirectory != null) newFolder = parentDirectory;
-
             } else if (directoryStr.equals(".")) {
                 // Do nothing
             } else {
@@ -128,8 +126,13 @@ public class Serveur {
             }
 
             if (newFolder.toFile().isDirectory()) {
-                currentPath = newFolder;
-                dataSend.writeUTF(String.format("\nThe folder <%s> is not present within the directory.\n", newFolder.toAbsolutePath().toString()));
+            	Path serverPath = Paths.get("").toAbsolutePath();        
+            	if(newFolder.toString().equals(serverPath.toString())) {
+                	dataSend.writeUTF(String.format("\nVous ne pouvez pas sortir de \\Stockage"));
+                } else {
+                	currentPath = newFolder;
+                	dataSend.writeUTF(String.format("\nVous etes dans %s\n", currentPath.toString().replace(serverPath.toString(), "")));
+                }
             } else {
                 dataSend.writeUTF(String.format("\nThe folder <%s> is not present within the directory.\n", directoryStr));
             }
@@ -219,18 +222,20 @@ public class Serveur {
                 dataSend.writeUTF("Welcome to our server! We are glad to have you here, client #" + clientNumber + " !\n" + "\n\nPlease choose a commande from the list below:\n\n" + "- cd <Folder name>\n" + "- ls\n" + "- mkdir <Name of the new Folder>\n" + "- upload <File name>\n" + "- download <File name>\n" + "- exit\n");
 
                 dataRecived = new DataInputStream(socket.getInputStream());
+                
+                
 
                 while (true) {
                     dataSend.writeUTF("\nYour command: ");
                     dataSend.flush();
-
                     dataSend.writeUTF(ACTIVE_SERVER);
 
                     command = dataRecived.readUTF();
-
                     System.out.format("\n\n[%s - %s] : %s", socket.getRemoteSocketAddress().toString().substring(1), new SimpleDateFormat(SERVER_OUTPUT_FORMAT).format(Calendar.getInstance().getTime()), command);
-                    commands = command.split(" ");
-                    if (commands.length > 0 && commands.length < 2) {
+                    commands = command.trim().split(" ");
+                    
+                    
+                    if (commands.length == 2 | commands.length == 1) {
                         switch (commands[0]) {
                             case "cd":
                                 try {
@@ -261,7 +266,6 @@ public class Serveur {
                                 }
                                 break;
                             case "download":
-
                                 try {
                                     downloadHandler();
                                 } catch (Exception e) {
