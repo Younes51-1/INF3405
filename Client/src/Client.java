@@ -121,8 +121,8 @@ public class Client {
                     System.out.println(e.getMessage());
                 }
             } else {
-            	dataSend.writeUTF("Fichier introuvable");
-                System.out.println("Erreur lors de la manipulation du fichier");
+            	dataSend.writeUTF("File not found");
+                System.out.println("Error while handling the file");
             }
         } else if (command.matches(download)) {
             try {
@@ -150,8 +150,15 @@ public class Client {
     	dataSend.writeUTF("download");
         dataSend.writeUTF(fileName);
         
+        String fileExist = dataRecived.readUTF();
+        if(!fileExist.contains("exist")){
+        	System.out.println(fileExist);
+        	return;
+        }
+       
         byte[] size = new byte[4];
         dataRecived.read(size);
+        
         int fileSize = ByteBuffer.wrap(size).asIntBuffer().get();
         Path filePath = Paths.get(fileName);
         FileOutputStream file = new FileOutputStream(filePath.toFile());
