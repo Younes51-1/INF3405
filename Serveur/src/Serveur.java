@@ -25,16 +25,15 @@ public class Serveur {
     static int clientNumber = 0;
 
     private static boolean ipValidator(String ip) throws Exception {
-
         String[] ipChunks = ip.split(Pattern.quote("."));
-        if (ipChunks.length != 4) throw new Exception("IP address requires four bytes.");
+        if (ipChunks.length != 4) throw new Exception("L'adresse IP doit être sur 4 octets.");
 
         for (String chunk : ipChunks) {
             try {
                 int ipChunk = Integer.parseInt(chunk);
-                if (0 > ipChunk || ipChunk > 255) throw new Exception("The numbers must be between 0 and 255.");
+                if (0 > ipChunk || ipChunk > 255) throw new Exception("Les nombres doivent être compris entre 0 et 255.");
             } catch (NumberFormatException e) {
-                throw new NumberFormatException("The numbers must be integers.");
+                throw new NumberFormatException("Les nombres doivent être des entiers.");
             }
         }
         ipAdress = ip;
@@ -44,9 +43,9 @@ public class Serveur {
     private static boolean portValidator(String portInput) throws Exception {
         try {
             port = Integer.parseInt(portInput);
-            if (5050 < port || port < 5000) throw new Exception("The numbers must be between 5000 and 5050.");
+            if (5050 < port || port < 5000) throw new Exception("Les nombres doivent être compris entre 5000 et 5050.");
         } catch (NumberFormatException e) {
-            throw new NumberFormatException("The numbers must be integers.");
+            throw new NumberFormatException("Les nombres doivent être des entiers.");
         }
         return true;
     }
@@ -55,8 +54,9 @@ public class Serveur {
     private static void userInput() {
         boolean ipValid = false;
         boolean portValid = false;
+        
         while (!ipValid) {
-            System.out.println("Please input the server's IP address: ");
+            System.out.println("Veuillez entrer l'adresse IP du serveur: ");
             String ipAdresseUser = scanner.nextLine();
             try {
                 ipValid = ipValidator(ipAdresseUser);
@@ -66,7 +66,7 @@ public class Serveur {
         }
 
         while (!portValid) {
-            System.out.println("Please input the server's Port: ");
+            System.out.println("Veuillez entrer le port du serveur: ");
             String portUser = scanner.nextLine();
             try {
                 portValid = portValidator(portUser);
@@ -74,7 +74,6 @@ public class Serveur {
                 System.out.println(e.getMessage());
             }
         }
-
     }
 
     public static void main(String[] args) throws Exception {
@@ -85,14 +84,12 @@ public class Serveur {
         try {
             serverSocket = new ServerSocket();
             serverSocket.setReuseAddress(true);
-
             serverSocket.bind(new InetSocketAddress(ipAdress, port));
-
-            System.out.format("\nServer created -> %s:%d%n\n", ipAdress, port);
+            System.out.format("\nServeur crée -> %s:%d%n\n", ipAdress, port);
 
             while (true) new ClientHandler(serverSocket.accept(), ++clientNumber).start();
         } catch (Exception e) {
-            System.out.println("\nThere was a problem when trying to create the server.\n");
+            System.out.println("\nUn problème a été rencontré lors de la création du serveur.\n");
         }
         serverSocket.close();
     }
@@ -106,13 +103,12 @@ public class Serveur {
         public ClientHandler(Socket socket, int clientNumber) {
             this.socket = socket;
             this.clientNumber = clientNumber;
-            System.out.println("\nConnection established with client. #" + clientNumber + " (" + socket + ")\n");
+            System.out.println("\nLa connexion a été établie avec le client. #" + clientNumber + " (" + socket + ")\n");
         }
 
         private static void cdHandler() throws Exception {
             String[] parts = command.split(" ", 2);
             String directoryStr = parts[1];
-
             Path newFolder = currentPath;
             
             if (directoryStr.equals("..")) {
@@ -131,10 +127,10 @@ public class Serveur {
                 	dataSend.writeUTF(String.format("\nVous ne pouvez pas sortir de \\Stockage"));
                 } else {
                 	currentPath = newFolder;
-                	dataSend.writeUTF(String.format("\nVous etes dans %s\n", currentPath.toString().replace(serverPath.toString(), "")));
+                	dataSend.writeUTF(String.format("\nVous êtes dans %s\n", currentPath.toString().replace(serverPath.toString(), "")));
                 }
             } else {
-                dataSend.writeUTF(String.format("\nThe folder <%s> is not present within the directory.\n", directoryStr));
+                dataSend.writeUTF(String.format("\nLe dossier <%s> n'est pas présent dans le répertoire.\n", directoryStr));
             }
         }
 
@@ -159,20 +155,21 @@ public class Serveur {
 
                 File file = combinedPath.toFile();
                 if (file.isDirectory()) {
-                    dataSend.writeUTF(String.format("\n<%s> already exists.\n", directoryStr));
+                    dataSend.writeUTF(String.format("\n<%s> existe déjà.\n", directoryStr));
                 } else {
                     file.mkdirs();
-                    dataSend.writeUTF(String.format("\n<%s> was successfully created.\n", directoryStr));
+                    dataSend.writeUTF(String.format("\n<%s> a été crée avec succès.\n", directoryStr));
                 }
             }
         }
 
         private static void uploadHandler() throws Exception {
             String fileName = dataRecived.readUTF();
-            System.out.println(String.format("\nReceiving file named : <%s>\n", fileName));
-
+            if (fileName.equals("Fichier introuvable"))
+            	return;
+            
+            System.out.println(String.format("\nReception du fichier : <%s>\n", fileName));
             int fileSize = dataRecived.readInt();
-
             Path filePath = currentPath.resolve(Paths.get(fileName));
             FileOutputStream fos = new FileOutputStream(filePath.toFile());
 
@@ -187,28 +184,25 @@ public class Serveur {
 
             fos.flush();
             fos.close();
-
-            dataSend.writeUTF(String.format("\n<%s> was successfully uploaded.\n", fileName));
+            dataSend.writeUTF(String.format("\n<%s> a été téléversé avec succès.\n", fileName));
         }
 
         private static void downloadHandler() throws Exception {
             String fileName = dataRecived.readUTF();
             Path relativeFilePath = Paths.get(fileName);
             Path absoluteFilePath = currentPath.resolve(relativeFilePath);
-            if (Files.exists(absoluteFilePath) == false) {
-                System.out.println("The file with name " + fileName + " does not exist.");
+
+            if (!Files.exists(absoluteFilePath)) {
+                dataSend.writeUTF("\nLe fichier " + fileName + " n'a pas été trouvé.\n");
                 return;
             }
 
-            System.out.println("Sending file named : " + fileName);
-
+            dataSend.writeUTF("\nLe fichier " + fileName + " existe.\n");
+            System.out.println("\nEnvoi du fichier : " + fileName);
             byte[] data = Files.readAllBytes(absoluteFilePath);
-
             dataSend.writeInt(data.length);
-
             dataSend.write(data);
             dataSend.flush();
-
             dataSend.writeUTF("Le fichier " + fileName + " a bien été téléchargé.");
         }
 
@@ -218,24 +212,18 @@ public class Serveur {
                 final String SERVER_OUTPUT_FORMAT = "yyyy-MM-dd@HH:mm:ss";
                 dataSend = new DataOutputStream(socket.getOutputStream());
                 dataRecived = new DataInputStream(socket.getInputStream());
-
-                dataSend.writeUTF("Welcome to our server! We are glad to have you here, client #" + clientNumber + " !\n" + "\n\nPlease choose a commande from the list below:\n\n" + "- cd <Folder name>\n" + "- ls\n" + "- mkdir <Name of the new Folder>\n" + "- upload <File name>\n" + "- download <File name>\n" + "- exit\n");
-
+                dataSend.writeUTF("Bienvenue sur notre serveur! Nous sommes heureux de vous avoir parmi nous, client #" + clientNumber + " !\n" + "\n\nVeuillez choisir une commande dans la liste ci-dessous:\n\n" + "- cd <Nom du répertoire>\n" + "- ls\n" + "- mkdir <Nom du nouveau dossier>\n" + "- upload <Nom du fichier>\n" + "- download <Nom du fichier>\n" + "- exit\n");
                 dataRecived = new DataInputStream(socket.getInputStream());
-                
-                
 
                 while (true) {
-                    dataSend.writeUTF("\nYour command: ");
+                    dataSend.writeUTF("\nVotre commande: ");
                     dataSend.flush();
                     dataSend.writeUTF(ACTIVE_SERVER);
-
                     command = dataRecived.readUTF();
                     System.out.format("\n\n[%s - %s] : %s", socket.getRemoteSocketAddress().toString().substring(1), new SimpleDateFormat(SERVER_OUTPUT_FORMAT).format(Calendar.getInstance().getTime()), command);
                     commands = command.trim().split(" ");
                     
-                    
-                    if (commands.length == 2 | commands.length == 1) {
+                    if (commands.length == 2 || commands.length == 1) {
                         switch (commands[0]) {
                             case "cd":
                                 try {
@@ -272,14 +260,13 @@ public class Serveur {
                                     System.out.println(e.getMessage());
                                 }
                                 break;
-
                             default:
-                                dataSend.writeUTF("\nUnkown command");
+                                dataSend.writeUTF("\nCommande non répertoriée");
                         }
-                    } else dataSend.writeUTF("\nUnkown command");
+                    } else dataSend.writeUTF("\nCommande non répertoriée");
                 }
             } catch (Exception e) {
-                System.out.println("\nERROR! Unable to establish connection with the client #" + clientNumber + ". (" + e + ")");
+                System.out.println("\nERREUR! Impossible d'établir la connexion avec le client #" + clientNumber + ". (" + e + ")");
             }
         }
     }
