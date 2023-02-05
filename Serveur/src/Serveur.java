@@ -166,7 +166,7 @@ public class Serveur {
 
         private static void uploadHandler() throws Exception {
             String fileName = dataRecived.readUTF();
-            System.out.println("Receiving file named : " + fileName);
+            System.out.println(String.format("\nReceiving file named : <%s>\n", fileName));
 
             int fileSize = dataRecived.readInt();
 
