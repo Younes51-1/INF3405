@@ -126,13 +126,8 @@ public class Serveur {
             }
 
             if (newFolder.toFile().isDirectory()) {
-            	Path serverPath = Paths.get("").toAbsolutePath();        
-            	if(newFolder.toString().equals(serverPath.toString())) {
-                	dataSend.writeUTF(String.format("\nVous ne pouvez pas sortir de \\Stockage"));
-                } else {
-                	currentPath = newFolder;
-                	dataSend.writeUTF(String.format("\nVous etes dans %s\n", currentPath.toString().replace(serverPath.toString(), "")));
-                }
+                currentPath = newFolder;
+                dataSend.writeUTF(String.format("\nSuccessfully changed to <%s>.\n", newFolder.toAbsolutePath().toString()));
             } else {
                 dataSend.writeUTF(String.format("\nThe folder <%s> is not present within the directory.\n", directoryStr));
             }
@@ -169,6 +164,9 @@ public class Serveur {
 
         private static void uploadHandler() throws Exception {
             String fileName = dataRecived.readUTF();
+            if (fileName.equals("File not found"))
+            	return;
+            
             System.out.println(String.format("\nReceiving file named : <%s>\n", fileName));
 
             int fileSize = dataRecived.readInt();
@@ -195,12 +193,12 @@ public class Serveur {
             String fileName = dataRecived.readUTF();
             Path relativeFilePath = Paths.get(fileName);
             Path absoluteFilePath = currentPath.resolve(relativeFilePath);
-            if (Files.exists(absoluteFilePath) == false) {
-                System.out.println("The file with name " + fileName + " does not exist.");
+            if (!Files.exists(absoluteFilePath)) {
+                dataSend.writeUTF("\nThe file with name " + fileName + " wasn't found.\n");
                 return;
             }
-
-            System.out.println("Sending file named : " + fileName);
+            dataSend.writeUTF("\nThe file with name " + fileName + " exist.\n");
+            System.out.println("\nSending file named : " + fileName);
 
             byte[] data = Files.readAllBytes(absoluteFilePath);
 

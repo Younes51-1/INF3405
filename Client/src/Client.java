@@ -121,6 +121,7 @@ public class Client {
                     System.out.println(e.getMessage());
                 }
             } else {
+            	dataSend.writeUTF("File not found");
                 System.out.println("Error while handling the file");
             }
         } else if (command.matches(download)) {
@@ -154,8 +155,15 @@ public class Client {
     	dataSend.writeUTF("download");
         dataSend.writeUTF(fileName);
         
+        String fileExist = dataRecived.readUTF();
+        if(!fileExist.contains("exist")){
+        	System.out.println(fileExist);
+        	return;
+        }
+       
         byte[] size = new byte[4];
         dataRecived.read(size);
+        
         int fileSize = ByteBuffer.wrap(size).asIntBuffer().get();
         
         Path filePath = Paths.get(fileName);
