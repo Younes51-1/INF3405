@@ -3,7 +3,10 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -122,10 +125,14 @@ public class Client {
             }
         } else if (command.matches(download)) {
             try {
-                downloadFromServer();
+            	final String FileName = command.split(" ")[1];
+                downloadFromServer(FileName);
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
+        }
+        else {
+        	 dataSend.writeUTF(command);
         }
     }
 
@@ -143,19 +150,30 @@ public class Client {
 		dataSend.flush();
     }
 
-    private static void downloadFromServer() throws Exception {
-        final String FileName = dataRecived.readUTF();
-        final int FileSize = Integer.parseInt(dataRecived.readUTF());
-        byte[] bytesRecived = new byte[FileSize];
-        int bytesRead = 0;
+    private static void downloadFromServer(String fileName) throws Exception {
+    	dataSend.writeUTF("download");
+        dataSend.writeUTF(fileName);
+        
+        byte[] size = new byte[4];
+        dataRecived.read(size);
+        int fileSize = ByteBuffer.wrap(size).asIntBuffer().get();
+        
+        Path filePath = Paths.get(fileName);
+        FileOutputStream file = new FileOutputStream(filePath.toFile());
+       
+        int maxFileRead = 8192;
+        byte[] buffer = new byte[maxFileRead];
+		int bytesToRead = fileSize;
+		
+		while (bytesToRead > 0) {
+			int min = Math.min(bytesToRead, buffer.length);
+			int read = dataRecived.read(buffer, 0, min);
+			file.write(buffer, 0, read);
+			bytesToRead -= read;
+		}
 
-        while (bytesRead < FileSize) {
-            bytesRead += dataRecived.read(bytesRecived, bytesRead, FileSize - bytesRead);
-        }
-
-        FileOutputStream file = new FileOutputStream(FileName);
-        file.write(bytesRecived);
-        file.close();
+		file.flush();
+		file.close();
     }
 
     public static void main(String[] args) {
