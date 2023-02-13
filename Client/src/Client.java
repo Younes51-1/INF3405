@@ -23,18 +23,18 @@ public class Client {
     static Scanner scanner = new Scanner(System.in);
 
     private static boolean ipValidator(String ip) throws Exception {
-
         String[] ipChunks = ip.split(Pattern.quote("."));
+        
         if (ipChunks.length != 4)
-            throw new Exception("IP address requires four bytes.");
+            throw new Exception("L'adresse IP doit être sur 4 octets.");
 
         for (String chunk : ipChunks) {
             try {
                 int ipChunk = Integer.parseInt(chunk);
                 if (0 > ipChunk || ipChunk > 255)
-                    throw new Exception("The numbers must be between 0 and 255.");
+                    throw new Exception("Les nombres doivent être compris entre 0 et 255.");
             } catch (NumberFormatException e) {
-                throw new NumberFormatException("The numbers must be integers.");
+                throw new NumberFormatException("Les nombres doivent être des entiers.");
             }
         }
         ipAdress = ip;
@@ -45,9 +45,9 @@ public class Client {
         try {
             port = Integer.parseInt(portInput);
             if (5050 < port || port < 5000)
-                throw new Exception("The numbers must be between 5000 and 5050.");
+                throw new Exception("Les nombres doivent être compris entre 5000 et 5050.");
         } catch (NumberFormatException e) {
-            throw new NumberFormatException("The numbers must be integers.");
+            throw new NumberFormatException("Les nombres doivent être des entiers.");
         }
         return true;
     }
@@ -57,7 +57,7 @@ public class Client {
         boolean ipValid = false;
         boolean portValid = false;
         while (!ipValid) {
-            System.out.println("Please input the server's IP address: ");
+            System.out.println("Veuillez entrer l'adresse IP du serveur: ");
             String ipAdresseUser = scanner.nextLine();
             try {
                 ipValid = ipValidator(ipAdresseUser);
@@ -67,7 +67,7 @@ public class Client {
         }
 
         while (!portValid) {
-            System.out.println("Please input the server's Port: ");
+            System.out.println("Veuillez entrer le port du serveur: ");
             String portUser = scanner.nextLine();
             try {
                 portValid = portValidator(portUser);
@@ -85,7 +85,7 @@ public class Client {
             dataRecived = new DataInputStream(socket.getInputStream());
             dataSend = new DataOutputStream(socket.getOutputStream());
         } catch (java.net.ConnectException e) {
-            System.out.println("The connection to the server could not be established.");
+            System.out.println("La connexion avec le serveur n'a pas pu être établie.");
             scanner.close();
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -138,15 +138,10 @@ public class Client {
     }
 
     private static void uploadToServer(File file) throws Exception {
-  
 		byte[] data = Files.readAllBytes(file.toPath());
-		
 		dataSend.writeUTF("upload");
-		
 		dataSend.writeUTF(file.getName());
-		
 		dataSend.writeInt(data.length);
-		
 		dataSend.write(data);
 		dataSend.flush();
     }
@@ -165,10 +160,8 @@ public class Client {
         dataRecived.read(size);
         
         int fileSize = ByteBuffer.wrap(size).asIntBuffer().get();
-        
         Path filePath = Paths.get(fileName);
         FileOutputStream file = new FileOutputStream(filePath.toFile());
-       
         int maxFileRead = 8192;
         byte[] buffer = new byte[maxFileRead];
 		int bytesToRead = fileSize;
@@ -188,6 +181,7 @@ public class Client {
         userInput();
         System.out.format("\nIP:port -> %s:%s\n", ipAdress, port);
         socketConnexion();
+
         try {
             while (!closeCommunication) {
                 String serverResponse = dataRecived.readUTF();
