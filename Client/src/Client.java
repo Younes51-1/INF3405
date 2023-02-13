@@ -108,9 +108,10 @@ public class Client {
             dataSend.writeUTF(command);
         else if (command.matches(ls))
             dataSend.writeUTF(command);
-        else if (command.matches(exit))
+        else if (command.matches(exit)) {
+        	dataSend.writeUTF(exit);
             closeCommunication = true;
-        else if (command.matches(mkdir))
+        } else if (command.matches(mkdir))
             dataSend.writeUTF(command);
         else if (command.matches(upload)) {
             final File file = new File(System.getProperty("user.dir") + File.separator + command.split(" ")[1]);
@@ -121,8 +122,8 @@ public class Client {
                     System.out.println(e.getMessage());
                 }
             } else {
-            	dataSend.writeUTF("File not found");
-                System.out.println("Error while handling the file");
+            	dataSend.writeUTF("Fichier introuvable");
+                System.out.println("Erreur lors du traitement du fichier ");
             }
         } else if (command.matches(download)) {
             try {
@@ -193,7 +194,7 @@ public class Client {
 
 
             }
-            System.out.println("\nYou have been successfully disconnected.");
+            System.out.println("\nVous avez été déconnecté.");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

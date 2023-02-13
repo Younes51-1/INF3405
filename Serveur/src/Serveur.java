@@ -214,8 +214,9 @@ public class Serveur {
                 dataRecived = new DataInputStream(socket.getInputStream());
                 dataSend.writeUTF("Bienvenue sur notre serveur! Nous sommes heureux de vous avoir parmi nous, client #" + clientNumber + " !\n" + "\n\nVeuillez choisir une commande dans la liste ci-dessous:\n\n" + "- cd <Nom du répertoire>\n" + "- ls\n" + "- mkdir <Nom du nouveau dossier>\n" + "- upload <Nom du fichier>\n" + "- download <Nom du fichier>\n" + "- exit\n");
                 dataRecived = new DataInputStream(socket.getInputStream());
+                boolean openCommunication = true;
 
-                while (true) {
+                while (openCommunication) {
                     dataSend.writeUTF("\nVotre commande: ");
                     dataSend.flush();
                     dataSend.writeUTF(ACTIVE_SERVER);
@@ -239,6 +240,11 @@ public class Serveur {
                                     System.out.println(e.getMessage());
                                 }
                                 break;
+                            case "exit":
+                            	this.socket.close();
+                            	openCommunication = false;
+                            	System.out.format("\n\n Client n%s s'est déconnecté\n\n", this.clientNumber);
+                            	break;
                             case "mkdir":
                                 try {
                                     mkdirHandler();
