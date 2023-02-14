@@ -1,3 +1,20 @@
+/*
+ * Notre client demande à l’utilisateur d’entrer l’adresse IP du serveur ainsi
+ * qu’un numéro de port. Les données entrées doivent passer les tests exécutés
+ * dans ipValidator() et portValidator() avant de pouvoir établir une
+ * connexion avec le serveur. Ces méthodes vérifient la validité des informations
+ * selon les requis du travail pratique. Une fois que les entrées ont été validées,
+ * on établit une connexion avec le serveur dans notre méthode socketConnexion()
+ * qui utilise la classe Socket définie par Java. Nous avons également implémenté
+ * une méthode execution() qui permet de lire les commandes entrées par l’utilisateur.
+ * Cette méthode est capable de reconnaitre les instructions ‘cd’, ‘ls’, ‘exit’, ‘mkdir’,
+ * ‘upload’ et ‘download’. Nous avons ajouté des méthodes uploadToServer() et
+ * downloadFromServer() pour traiter les deux dernières instructions car une partie du
+ * traitement de ces instructions doit s’effectuer sur le client contrairement aux autres
+ * qui peuvent s’effectuer sur le serveur. Le client reste à l’affût de nouvelles commandes
+ * tant que la communication avec le serveur existe.
+ * */
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;

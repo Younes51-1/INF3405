@@ -1,3 +1,27 @@
+/*
+ *  l’adresse IP et le port du serveur doivent être entrés manuellement
+ *  par l’utilisateur, Les données entrées doivent passer les tests exécutés
+ *  dans ipValidator() et portValidator() avant de pouvoir établir une
+ *  connexion avec le client.
+ *  Pour chaque nouveau client, notre serveur crée un thread,
+ *  de cette manière plusieurs clients peuvent se connecter
+ *  et communiquer avec notre serveur.
+ *  Chaque thread gère la réception des commandes venant du client et
+ *  renvoie une réponse afin d’indiquer le statut d’exécution de la commande.
+ *  À partir du client, le thread associe un gestionnaire d’exécution pour
+ *  chaque commande sur le serveur.
+ *  Le gestionnaire de la commande cd (cdHandler()) permet à l’utilisateur
+ *  de se déplacer à travers la hiérarchie des répertoires.
+ *  Nous avons créé un dossier Stockage pour accueillir les fichiers du client.
+ *  Le client ne peut pas sortir de ce dossier pour des raisons de sécurité.
+ *  Voici un bref résumé du rôle des autres gestionnaires :
+ *  
+·	lsHandler() : permet d’énumérer les fichiers et dossiers du répertoire courant du serveur
+·	mkdirHandler() : permet de créer un répertoire sur le serveur
+·	uploadHandler() : permet de téléverser un fichier du client vers le serveur
+·	downloadHandler() : permet de télécharger un fichier du serveur vers le client
+ * */
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -114,8 +138,8 @@ public class Serveur {
 				} catch (Exception e) {
 					System.out.println(e.getMessage());
 				}
-            currentPath = Paths.get("Stockage").toAbsolutePath();
             }
+            currentPath = Paths.get("Stockage").toAbsolutePath();
             System.out.println("\nLa connexion a été établie avec le client. #" + clientNumber + " (" + socket + ")\n");
         }
 
