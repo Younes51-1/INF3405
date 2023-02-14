@@ -98,11 +98,24 @@ public class Serveur {
         private Socket socket;
         private int clientNumber;
         static String[] commands;
-        private static Path currentPath = Paths.get("Stockage").toAbsolutePath();
+        private static Path currentPath;
 
         public ClientHandler(Socket socket, int clientNumber) {
             this.socket = socket;
             this.clientNumber = clientNumber;
+            Path StockageFolder = Paths.get("Stockage").toAbsolutePath();
+            if (!StockageFolder.toFile().isDirectory()) {
+            	try {
+                    Path directory = Paths.get("Stockage");
+                    Path combinedPath = currentPath.resolve(directory);
+                    File file = combinedPath.toFile();
+                    file.mkdir();
+     
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
+            currentPath = Paths.get("Stockage").toAbsolutePath();
+            }
             System.out.println("\nLa connexion a été établie avec le client. #" + clientNumber + " (" + socket + ")\n");
         }
 

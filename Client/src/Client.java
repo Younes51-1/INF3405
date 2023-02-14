@@ -102,7 +102,7 @@ public class Client {
         final String upload = "upload.*";
         final String download = "download.*";
 
-        command = scanner.nextLine();
+        command = scanner.nextLine().trim().replaceAll(" +", " ");
 
         if (command.matches(cd))
             dataSend.writeUTF(command);
